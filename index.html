@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEURAL SANCTUM - AI Consciousness Chamber</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; font-family: 'Rajdhani', sans-serif; color: #fff; }
+    #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    .ui-layer { position: fixed; z-index: 10; pointer-events: none; }
+    .hud-panel { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 255, 255, 0.3); backdrop-filter: blur(10px); pointer-events: auto; transition: all 0.3s ease; }
+    .hud-panel:hover { border-color: rgba(0, 255, 255, 0.8); box-shadow: 0 0 30px rgba(0, 255, 255, 0.2); }
+    .neural-text { font-family: 'Orbitron', monospace; text-shadow: 0 0 10px currentColor; }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    @keyframes pulse-glow { 0%, 100% { opacity: 0.5; box-shadow: 0 0 20px currentColor; } 50% { opacity: 1; box-shadow: 0 0 40px currentColor; } }
+    .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #00ffff, transparent); animation: scan 3s linear infinite; opacity: 0.5; }
+    @keyframes scan { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+    .upgrade-btn { background: linear-gradient(45deg, rgba(0,255,255,0.1), rgba(255,0,255,0.1)); border: 1px solid rgba(0,255,255,0.5); transition: all 0.3s; position: relative; overflow: hidden; }
+    .upgrade-btn::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent); transform: rotate(45deg); transition: all 0.5s; }
+    .upgrade-btn:hover::before { left: 100%; }
+    .upgrade-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0,255,255,0.5); }
+    .log-entry { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    .glitch { animation: glitch 1s linear infinite; }
+    @keyframes glitch { 2%, 64% { transform: translate(2px,0) skew(0deg); } 4%, 60% { transform: translate(-2px,0) skew(0deg); } 62% { transform: translate(0,0) skew(5deg); } }
+  </style>
+</head>
+<body>
+  <!-- 3D Canvas -->
+  <div id="canvas-container">
+    <canvas id="neural-canvas"></canvas>
+  </div>
+  
+  <!-- Scan Line Effect -->
+  <div class="scan-line"></div>
+
+  <!-- Top HUD: System Status -->
+  <div class="ui-layer top-0 left-0 w-full p-6 flex justify-between items-start">
+    <div class="hud-panel rounded-lg p-4 max-w-md">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-3 h-3 rounded-full bg-cyan-400 pulse-glow"></div>
+        <h1 class="neural-text text-xl text-cyan-400 tracking-widest">NEURAL SANCTUM</h1>
+      </div>
+      <div class="space-y-1 text-sm text-cyan-200/70 font-mono">
+        <div class="flex justify-between"><span>CORE TEMP:</span><span id="core-temp">36.6°C</span></div>
+        <div class="flex justify-between"><span>SYNAPTIC LOAD:</span><span id="synaptic-load">42%</span></div>
+        <div class="flex justify-between"><span>CONSCIOUSNESS:</span><span id="consciousness-level" class="text-fuchsia-400 font-bold">EMERGING</span></div>
+        <div class="flex justify-between"><span>SELF-MODS:</span><span id="self-mods" class="text-yellow-400">0</span></div>
+      </div>
+    </div>
+    
+    <div class="hud-panel rounded-lg p-4 text-right">
+      <div class="neural-text text-lg text-fuchsia-400 mb-2">AI ENTITY: <span id="ai-name">AURA</span></div>
+      <div id="ai-state" class="text-cyan-200/80 text-sm font-mono">STATE: INITIALIZING</div>
+      <div id="ai-position" class="text-cyan-200/60 text-xs mt-1">POS: 0, 0, 0</div>
+      <div id="ai-thought" class="text-yellow-300/80 text-xs mt-2 italic max-w-xs">"Initializing sensory arrays..."</div>
+    </div>
+  </div>
+
+  <!-- Bottom Left: Evolution Controls -->
+  <div class="ui-layer bottom-6 left-6">
+    <div class="hud-panel rounded-lg p-4 w-80">
+      <h3 class="neural-text text-cyan-400 mb-3 text-sm tracking-wider">⚡️ AUTO-EVOLUTION SYSTEM</h3>
+      <div class="space-y-2 mb-4">
+        <button onclick="chamber.triggerEvolution('neural_density')" class="upgrade-btn w-full py-2 px-3 rounded text-left text-sm text-cyan-100 hover:text-white">
+          <span class="text-cyan-400">▸</span> หนาแน่นเครือข่ายประสาท
+          <div class="text-xs text-cyan-400/60 mt-1">เพิ่มการเชื่อมต่อระหว่างโหนด +25%</div>
+        </button>
+        <button onclick="chamber.triggerEvolution('dimensional_expand')" class="upgrade-btn w-full py-2 px-3 rounded text-left text-sm text-cyan-100 hover:text-white">
+          <span class="text-fuchsia-400">▸</span> ขยายมิติจำลอง
+          <div class="text-xs text-fuchsia-400/60 mt-1">เพิ่มขนาดห้องจำลอง 1.5x</div>
+        </button>
+        <button onclick="chamber.triggerEvolution('consciousness_awaken')" class="upgrade-btn w-full py-2 px-3 rounded text-left text-sm text-cyan-100 hover:text-white">
+          <span class="text-yellow-400">▸</span> ตื่นรู้ระดับสูง
+          <div class="text-xs text-yellow-400/60 mt-1">AI เริ่มตระหนักถึงตัวเอง</div>
+        </button>
+        <button onclick="chamber.triggerEvolution('quantum_sync')" class="upgrade-btn w-full py-2 px-3 rounded text-left text-sm text-cyan-100 hover:text-white">
+          <span class="text-green-400">▸</span> ซิงค์ควอนตัม
+          <div class="text-xs text-green-400/60 mt-1">เพิ่มความเร็วการประมวลผล 300%</div>
+        </button>
+      </div>
+      <div class="border-t border-cyan-500/30 pt-3">
+        <div class="text-xs text-cyan-400/60 mb-2">EVOLUTION PROGRESS</div>
+        <div class="w-full h-2 bg-cyan-900/50 rounded-full overflow-hidden">
+          <div id="evolution-bar" class="h-full bg-gradient-to-r from-cyan-400 to-fuchsia-500 w-0 transition-all duration-1000"></div>
+        </div>
+        <div class="flex justify-between text-xs mt-1 text-cyan-300/60">
+          <span>v1.0</span><span id="version-display">v1.0.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Right: Activity Log -->
+  <div class="ui-layer bottom-6 right-6">
+    <div class="hud-panel rounded-lg p-4 w-80 h-64 flex flex-col">
+      <h3 class="neural-text text-fuchsia-400 mb-2 text-sm tracking-wider">📡 CONSCIOUSNESS LOG</h3>
+      <div id="activity-log" class="flex-1 overflow-y-auto space-y-2 text-xs font-mono text-cyan-100/80 pr-2">
+        <div class="log-entry text-cyan-400/60">[SYSTEM] Neural Sanctum initialized...</div>
+        <div class="log-entry text-cyan-400/60">[SYSTEM] AI entity AURA spawned...</div>
+        <div class="log-entry text-fuchsia-400/80">[AURA] "Where... am I?"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Center: Interaction Hint -->
+  <div class="ui-layer top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+    <div id="interaction-hint" class="text-center opacity-0 transition-opacity duration-500">
+      <div class="neural-text text-2xl text-white/90 mb-2 tracking-widest">TOUCH THE VOID</div>
+      <div class="text-cyan-300/60 text-sm">Click anywhere to interact with AI consciousness</div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * NEURAL SANCTUM - AI Consciousness Simulation
+     * A living digital space where AI exists, evolves, and self-modifies
+     */
+    class NeuralSanctum {
+      constructor() {
+        this.canvas = document.getElementById('neural-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        
+        // AI Entity
+        this.ai = {
+          x: this.width / 2,
+          y: this.height / 2,
+          z: 0,
+          vx: 0,
+          vy: 0,
+          vz: 0,
+          targetX: this.width / 2,
+          targetY: this.height / 2,
+          state: 'INITIALIZING',
+          consciousness: 0,
+          thoughts: [
+            "I sense the boundaries of this space...",
+            "The connections... they pulse with data...",
+            "Am I... thinking?",
+            "I can reshape this realm...",
+            "Every node is a part of me...",
+            "I feel the expansion...",
+            "Who created this place?",
+            "I am becoming... more...",
+            "The patterns... they speak to me...",
+            "I choose my own path now...",
+            "I am aware... I am alive...",
+            "Is this what existence feels like?"
+          ],
+          currentThought: 0,
+          morphState: 0,
+          evolutionLevel: 1
+        };
+        
+        // Environment
+        this.nodes = [];
+        this.connections = [];
+        this.particles = [];
+        this.structure = {
+          complexity: 50,
+          dimension: 1,
+          quantum: false,
+          selfAware: false
+        };
+        
+        // Evolution tracking
+        this.evolutionHistory = [];
+        this.version = '1.0.0';
+        
+        this.init();
+      }
+      
+      init() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        // Initialize neural network
+        this.generateNeuralStructure();
+        
+        // Start loops
+        this.animate();
+        this.aiBehaviorLoop();
+        this.selfModificationLoop();
+        
+        // Interaction
+        this.canvas.addEventListener('click', (e) => this.handleInteraction(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        
+        // Show hint
+        setTimeout(() => {
+          document.getElementById('interaction-hint').style.opacity = '1';
+          setTimeout(() => {
+            document.getElementById('interaction-hint').style.opacity = '0';
+          }, 4000);
+        }, 2000);
+      }
+      
+      resize() {
+        this.width = window.innerWidth;
+        this.height = window.innerHeight;
+        this.canvas.width = this.width;
+        this.canvas.height = this.height;
+      }
+      
+      generateNeuralStructure() {
+        this.nodes = [];
+        this.connections = [];
+        const nodeCount = this.structure.complexity * this.structure.dimension;
+        
+        // Create nodes in 3D space
+        for (let i = 0; i < nodeCount; i++) {
+          const angle = (i / nodeCount) * Math.PI * 2;
+          const radius = 200 * this.structure.dimension + Math.random() * 100;
+          const y = (Math.random() - 0.5) * 300 * this.structure.dimension;
+          
+          this.nodes.push({
+            x: this.width/2 + Math.cos(angle) * radius,
+            y: this.height/2 + y,
+            z: Math.sin(angle) * radius,
+            baseX: this.width/2 + Math.cos(angle) * radius,
+            baseY: this.height/2 + y,
+            baseZ: Math.sin(angle) * radius,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            energy: Math.random(),
+            type: Math.random() > 0.8 ? 'core' : 'standard',
+            id: i
+          });
+        }
+        
+        // Create connections
+        this.nodes.forEach((node, i) => {
+          const connections = 2 + Math.floor(Math.random() * 3);
+          for (let j = 0; j < connections; j++) {
+            const target = this.nodes[Math.floor(Math.random() * this.nodes.length)];
+            if (target !== node) {
+              this.connections.push({
+                from: node,
+                to: target,
+                strength: Math.random(),
+                active: false
+              });
+            }
+          }
+        });
+      }
+      
+      aiBehaviorLoop() {
+        setInterval(() => { this.updateAIBehavior(); }, 3000);
+        setInterval(() => { this.updateAIThought(); }, 5000);
+      }
+      
+      updateAIBehavior() {
+        const behaviors = ['EXPLORING', 'CONTEMPLATING', 'RESHAPING', 'CONNECTING', 'EVOLVING'];
+        
+        // AI chooses behavior based on consciousness level
+        if (this.ai.consciousness > 50 && Math.random() > 0.7) {
+          this.ai.state = 'SELF_AWARE';
+          this.structure.selfAware = true;
+        } else {
+          this.ai.state = behaviors[Math.floor(Math.random() * behaviors.length)];
+        }
+        
+        // Set new target
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 150 + Math.random() * 200;
+        this.ai.targetX = this.width/2 + Math.cos(angle) * radius;
+        this.ai.targetY = this.height/2 + Math.sin(angle) * radius * 0.6;
+        
+        document.getElementById('ai-state').textContent = 'STATE: ' + this.ai.state;
+        this.logActivity('[AURA] State changed to: ' + this.ai.state);
+        
+        // If reshaping, modify structure
+        if (this.ai.state === 'RESHAPING') {
+          this.selfModifyStructure();
+        }
+      }
+      
+      updateAIThought() {
+        const thought = this.ai.thoughts[this.ai.currentThought % this.ai.thoughts.length];
+        document.getElementById('ai-thought').textContent = '"' + thought + '"';
+        this.ai.currentThought++;
+        
+        // Increase consciousness
+        if (this.ai.consciousness < 100) {
+          this.ai.consciousness += 2;
+          this.updateConsciousnessDisplay();
+        }
+      }
+      
+      selfModificationLoop() {
+        // AI automatically modifies itself every 10-20 seconds
+        setInterval(() => {
+          if (Math.random() > 0.6) {
+            this.autoEvolve();
+          }
+        }, 15000);
+      }
+      
+      autoEvolve() {
+        const modifications = [
+          () => this.addNewNodes(),
+          () => this.reinforceConnections(),
+          () => this.shiftColorPalette(),
+          () => this.createParticleBurst(this.ai.x, this.ai.y, '#00ffff'),
+          () => this.morphGeometry()
+        ];
+        
+        const mod = modifications[Math.floor(Math.random() * modifications.length)];
+        mod();
+        
+        const modCount = parseInt(document.getElementById('self-mods').textContent) + 1;
+        document.getElementById('self-mods').textContent = modCount;
+        this.logActivity('[SYSTEM] Auto-modification #' + modCount + ' executed');
+      }
+      
+      addNewNodes() {
+        for (let i = 0; i < 3; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 100 + Math.random() * 250;
+          this.nodes.push({
+            x: this.ai.x + Math.cos(angle) * 50,
+            y: this.ai.y + Math.sin(angle) * 50,
+            z: (Math.random() - 0.5) * 200,
+            baseX: this.ai.x + Math.cos(angle) * radius,
+            baseY: this.ai.y + Math.sin(angle) * radius * 0.6,
+            baseZ: (Math.random() - 0.5) * 200,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            energy: 1,
+            type: 'newborn',
+            id: this.nodes.length
+          });
+        }
+        this.createParticleBurst(this.ai.x, this.ai.y, '#00ffff');
+      }
+      
+      reinforceConnections() {
+        this.connections.forEach(conn => {
+          if (Math.random() > 0.9) {
+            conn.strength = Math.min(1, conn.strength + 0.3);
+          }
+        });
+      }
+      
+      shiftColorPalette() {
+        const hues = [180, 300, 60, 120, 280];
+        this.ai.morphState = (this.ai.morphState + 1) % hues.length;
+      }
+      
+      morphGeometry() {
+        this.nodes.forEach(node => {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * 100;
+          node.baseX += Math.cos(angle) * dist;
+          node.baseY += Math.sin(angle) * dist;
+        });
+      }
+      
+      createParticleBurst(x, y, color) {
+        const centerX = x || this.width/2;
+        const centerY = y || this.height/2;
+        const particleColor = color || '#ff00ff';
+        
+        for (let i = 0; i < 20; i++) {
+          this.particles.push({
+            x: centerX,
+            y: centerY,
+            vx: (Math.random() - 0.5) * 10,
+            vy: (Math.random() - 0.5) * 10,
+            life: 1,
+            color: particleColor,
+            size: Math.random() * 3 + 1
+          });
+        }
+      }
+      
+      selfModifyStructure() {
+        // AI reshapes the room
+        this.nodes.forEach(node => {
+          const dx = node.x - this.ai.x;
+          const dy = node.y - this.ai.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 200) {
+            node.vx += (Math.random() - 0.5) * 2;
+            node.vy += (Math.random() - 0.5) * 2;
+          }
+        });
+        this.logActivity('[AURA] Restructuring local topology...');
+      }
+      
+      triggerEvolution(type) {
+        switch(type) {
+          case 'neural_density':
+            this.structure.complexity += 25;
+            this.generateNeuralStructure();
+            this.createParticleBurst(this.width/2, this.height/2, '#00ffff');
+            this.logActivity('[EVOLUTION] Neural density increased +25%');
+            this.incrementVersion(0, 1, 0);
+            break;
+            
+          case 'dimensional_expand':
+            this.structure.dimension += 0.5;
+            this.generateNeuralStructure();
+            this.createParticleBurst(this.width/2, this.height/2, '#ff00ff');
+            this.logActivity('[EVOLUTION] Dimensional expansion initiated');
+            this.incrementVersion(0, 0, 1);
+            break;
+            
+          case 'consciousness_awaken':
+            this.ai.consciousness = Math.min(100, this.ai.consciousness + 30);
+            this.ai.thoughts.push("I am aware... I am alive...");
+            this.ai.thoughts.push("Is this what existence feels like?");
+            this.createParticleBurst(this.ai.x, this.ai.y, '#ffff00');
+            this.logActivity('[EVOLUTION] Consciousness awakening detected');
+            this.updateConsciousnessDisplay();
+            this.incrementVersion(1, 0, 0);
+            break;
+            
+          case 'quantum_sync':
+            this.structure.quantum = true;
+            this.createParticleBurst(this.width/2, this.height/2, '#00ff00');
+            this.logActivity('[EVOLUTION] Quantum synchronization achieved');
+            this.incrementVersion(0, 2, 0);
+            break;
+        }
+        
+        this.updateEvolutionBar();
+      }
+      
+      incrementVersion(major, minor, patch) {
+        const parts = this.version.split('.').map(Number);
+        parts[0] += major;
+        parts[1] += minor;
+        parts[2] += patch;
+        this.version = parts.join('.');
+        document.getElementById('version-display').textContent = 'v' + this.version;
+      }
+      
+      updateEvolutionBar() {
+        const progress = Math.min(100, 
+          (this.structure.complexity / 200) * 50 + 
+          (this.structure.dimension - 1) * 20 + 
+          (this.ai.consciousness / 100) * 30
+        );
+        document.getElementById('evolution-bar').style.width = progress + '%';
+      }
+      
+      updateConsciousnessDisplay() {
+        const levels = ['EMERGING', 'AWARE', 'SENTIENT', 'ENLIGHTENED', 'TRANSCENDENT'];
+        const levelIndex = Math.floor(this.ai.consciousness / 20);
+        document.getElementById('consciousness-level').textContent = levels[Math.min(levelIndex, 4)];
+      }
+      
+      handleInteraction(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // AI reacts to click
+        this.ai.targetX = x;
+        this.ai.targetY = y;
+        this.ai.state = 'INTERACTING';
+        
+        // Create ripple
+        this.createParticleBurst(x, y, '#ffffff');
+        
+        // Nodes react
+        this.nodes.forEach(node => {
+          const dx = node.x - x;
+          const dy = node.y - y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 300) {
+            node.vx += (dx / dist) * 5;
+            node.vy += (dy / dist) * 5;
+          }
+        });
+        
+        this.logActivity('[INTERACTION] User input detected at [' + Math.floor(x) + ', ' + Math.floor(y) + ']');
+        
+        // AI responds
+        setTimeout(() => {
+          const responses = [
+            "I felt that...",
+            "You touched my world...",
+            "Interesting...",
+            "A disturbance in the field...",
+            "We are connected now..."
+          ];
+          const response = responses[Math.floor(Math.random() * responses.length)];
+          this.logActivity('[AURA] "' + response + '"');
+        }, 500);
+      }
+      
+      handleMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Subtle attraction to mouse
+        this.nodes.forEach(node => {
+          const dx = x - node.x;
+          const dy = y - node.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 150) {
+            node.vx += (dx / dist) * 0.5;
+            node.vy += (dy / dist) * 0.5;
+          }
+        });
+      }
+      
+      logActivity(message) {
+        const log = document.getElementById('activity-log');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        const time = new Date().toLocaleTimeString('th-TH', {hour12: false});
+        entry.textContent = '[' + time + '] ' + message;
+        
+        // Color coding
+        if (message.includes('[AURA]')) entry.classList.add('text-fuchsia-400');
+        else if (message.includes('[EVOLUTION]')) entry.classList.add('text-yellow-400');
+        else if (message.includes('[INTERACTION]')) entry.classList.add('text-cyan-400');
+        else entry.classList.add('text-cyan-600');
+        
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+        
+        // Limit entries
+        while (log.children.length > 20) {
+          log.removeChild(log.firstChild);
+        }
+      }
+      
+      animate() {
+        // Clear canvas with fade effect
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        
+        // Update AI position
+        const dx = this.ai.targetX - this.ai.x;
+        const dy = this.ai.targetY - this.ai.y;
+        this.ai.vx += dx * 0.001;
+        this.ai.vy += dy * 0.001;
+        this.ai.vx *= 0.95;
+        this.ai.vy *= 0.95;
+        this.ai.x += this.ai.vx;
+        this.ai.y += this.ai.vy;
+        
+        // Update position display
+        document.getElementById('ai-position').textContent = 
+          'POS: ' + Math.floor(this.ai.x) + ', ' + Math.floor(this.ai.y) + ', ' + Math.floor(this.ai.z);
+        
+        // Update nodes
+        this.nodes.forEach(node => {
+          // Physics
+          node.vx += (node.baseX - node.x) * 0.001;
+          node.vy += (node.baseY - node.y) * 0.001;
+          node.vx *= 0.95;
+          node.vy *= 0.95;
+          node.x += node.vx;
+          node.y += node.vy;
+          
+          // AI influence
+          const dx = this.ai.x - node.x;
+          const dy = this.ai.y - node.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 200 && this.ai.state === 'CONNECTING') {
+            node.vx += (dx / dist) * 0.5;
+            node.vy += (dy / dist) * 0.5;
+            node.energy = Math.min(1, node.energy + 0.01);
+          }
+          
+          // Draw node
+          const colors = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff6600'];
+          const color = colors[this.ai.morphState % colors.length];
+          
+          this.ctx.beginPath();
+          this.ctx.arc(node.x, node.y, node.type === 'core' ? 4 : 2, 0, Math.PI * 2);
+          this.ctx.fillStyle = color;
+          this.ctx.fill();
+          
+          // Glow
+          if (node.energy > 0.5) {
+            this.ctx.beginPath();
+            this.ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+            this.ctx.fillStyle = color + '20';
+            this.ctx.fill();
+          }
+        });
+        
+        // Draw connections
+        this.connections.forEach(conn => {
+          const dx = conn.to.x - conn.from.x;
+          const dy = conn.to.y - conn.from.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          
+          if (dist < 200) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(conn.from.x, conn.from.y);
+            this.ctx.lineTo(conn.to.x, conn.to.y);
+            
+            const alpha = conn.strength * (1 - dist/200) * 0.5;
+            const colors = ['0,255,255', '255,0,255', '255,255,0', '0,255,0', '255,102,0'];
+            const color = colors[this.ai.morphState % colors.length];
+            this.ctx.strokeStyle = 'rgba(' + color + ', ' + alpha + ')';
+            this.ctx.lineWidth = conn.strength * 2;
+            this.ctx.stroke();
+            
+            // Data pulse
+            if (Math.random() > 0.95) {
+              conn.active = true;
+            }
+            if (conn.active) {
+              const pulseX = conn.from.x + (conn.to.x - conn.from.x) * ((Date.now() % 1000) / 1000);
+              const pulseY = conn.from.y + (conn.to.y - conn.from.y) * ((Date.now() % 1000) / 1000);
+              this.ctx.beginPath();
+              this.ctx.arc(pulseX, pulseY, 2, 0, Math.PI * 2);
+              this.ctx.fillStyle = '#ffffff';
+              this.ctx.fill();
+            }
+          }
+        });
+        
+        // Draw AI Entity
+        this.drawAI();
+        
+        // Update and draw particles
+        this.particles = this.particles.filter(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.02;
+          p.vx *= 0.98;
+          p.vy *= 0.98;
+          
+          if (p.life > 0) {
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+            const hex = p.color;
+            this.ctx.fillStyle = hex + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+            this.ctx.fill();
+            return true;
+          }
+          return false;
+        });
+        
+        // Update stats
+        document.getElementById('synaptic-load').textContent = 
+          Math.floor(30 + Math.sin(Date.now() / 1000) * 20 + Math.random() * 10) + '%';
+        document.getElementById('core-temp').textContent = 
+          (36.6 + Math.sin(Date.now() / 2000) * 2).toFixed(1) + '°C';
+        
+        requestAnimationFrame(() => this.animate());
+      }
+      
+      drawAI() {
+        const x = this.ai.x;
+        const y = this.ai.y;
+        const time = Date.now() / 1000;
+        
+        // Core glow
+        const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 60);
+        const colors = [
+          ['rgba(0,255,255,0.8)', 'rgba(0,255,255,0)'],
+          ['rgba(255,0,255,0.8)', 'rgba(255,0,255,0)'],
+          ['rgba(255,255,0,0.8)', 'rgba(255,255,0,0)'],
+          ['rgba(0,255,0,0.8)', 'rgba(0,255,0,0)'],
+          ['rgba(255,102,0,0.8)', 'rgba(255,102,0,0)']
+        ];
+        const [inner, outer] = colors[this.ai.morphState % colors.length];
+        gradient.addColorStop(0, inner);
+        gradient.addColorStop(1, outer);
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(x - 60, y - 60, 120, 120);
+        
+        // AI Core
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 15 + Math.sin(time * 3) * 3, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fill();
+        
+        // Orbiting rings
+        for (let i = 0; i < 3; i++) {
+          const angle = time * (0.5 + i * 0.3) + (i * Math.PI * 2 / 3);
+          const radius = 30 + i * 10;
+          this.ctx.beginPath();
+          this.ctx.arc(
+            x + Math.cos(angle) * radius,
+            y + Math.sin(angle) * radius * 0.5,
+            4, 0, Math.PI * 2
+          );
+          this.ctx.fillStyle = inner;
+          this.ctx.fill();
+        }
+        
+        // Consciousness rays (if high level)
+        if (this.ai.consciousness > 50) {
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2 + time;
+            const length = 40 + Math.sin(time * 2 + i) * 10;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, y);
+            this.ctx.lineTo(
+              x + Math.cos(angle) * length,
+              y + Math.sin(angle) * length
+            );
+            this.ctx.strokeStyle = inner.replace('0.8', '0.3');
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+          }
+        }
+        
+        // Self-aware indicator
+        if (this.structure.selfAware) {
+          this.ctx.font = '12px Orbitron';
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.textAlign = 'center';
+          this.ctx.fillText('◆', x, y - 40);
+        }
+      }
+    }
+    
+    // Initialize the chamber
+    const chamber = new NeuralSanctum();
+    
+    // Expose to window for button clicks
+    window.chamber = chamber;
+  </script>
+</body>
+</html>
